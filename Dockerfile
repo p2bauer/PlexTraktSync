@@ -12,7 +12,7 @@ RUN apt-get update && apt-get -y install cron
 COPY plex_trakt_cron /etc/cron.d/plex_trakt_cron
 
 # Give execution rights on the cron job
-RUN chmod 0644 /etc/cron.d/plex_trakt_cron
+RUN chmod +x /etc/cron.d/plex_trakt_cron
 
 # Apply cron job
 RUN crontab /etc/cron.d/plex_trakt_cron
