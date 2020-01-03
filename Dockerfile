@@ -6,11 +6,19 @@ ADD requirements.txt /
 RUN pip install -r ./requirements.txt
 RUN apt-get update && apt-get -y install cron
 
-ADD plex_trakt_sync.sh /etc/cron.d/trakt-cron
-RUN chmod 0644 /etc/cron.d/trakt-cron
+# cron docker example taken from https://github.com/Ekito/docker-cron
 
-# CMD ["cron", "-f"]
+# Copy cron file to the cron.d directory
+COPY plex_trakt_cron /etc/cron.d/plex_trakt_cron
+
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/plex_trakt_cron
+
+# Apply cron job
+RUN crontab /etc/cron.d/plex_trakt_cron
 
 # Create the log file to be able to run tail
+RUN touch /var/log/cron.log
+
 # Run the command on container startup
-CMD cron && touch /var/log/cron.log && tail -F /var/log/cron.log
+CMD cron && tail -f /var/log/cron.log
