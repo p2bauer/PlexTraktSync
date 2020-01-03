@@ -52,7 +52,7 @@ def process_movie_section(s, watched_set, ratings_dict, listutil, collection):
         elif 'xbmcnfo' in guid:
             x = guid.split('//')[1]
             x = x.split('?')[0]
-            provider = CONFIG['xbmc-providers']['movies']
+            provider = getenv('XBMC_PROVIDERS_MOVIES', CONFIG['xbmc-providers']['movies'])
         else:
             logging.error('Movie [{} ({})]: Unrecognized GUID {}'.format(
                 movie.title, movie.year, movie.guid))
@@ -72,7 +72,7 @@ def process_movie_section(s, watched_set, ratings_dict, listutil, collection):
                     movie.title, movie.year))
                 continue
 
-            if CONFIG['sync']['collection']:
+            if getenv('SYNC_COLLECTION', CONFIG['sync']['collection']):
                 # add to collection if necessary
                 if m.slug not in collection:
                     logging.info('Movie [{} ({})]: Added to trakt collection'.format(
@@ -80,7 +80,7 @@ def process_movie_section(s, watched_set, ratings_dict, listutil, collection):
                     m.add_to_library()
 
             # compare ratings
-            if CONFIG['sync']['ratings']:
+            if getenv('SYNC_RATINGS', CONFIG['sync']['ratings']):
                 if m.slug in ratings_dict:
                     trakt_rating = int(ratings_dict[m.slug])
                 else:
@@ -101,7 +101,7 @@ def process_movie_section(s, watched_set, ratings_dict, listutil, collection):
                         movie.title, movie.year, trakt_rating))
 
             # sync watch status
-            if CONFIG['sync']['watched_status']:
+            if getenv('SYNC_WATCHED_STATUS', CONFIG['sync']['watched_status']):
                 watchedOnPlex = movie.isWatched
                 watchedOnTrakt = m.slug in watched_set
                 if watchedOnPlex is not watchedOnTrakt:
@@ -150,7 +150,7 @@ def process_show_section(s):
         elif 'xbmcnfotv' in guid:
             x = guid.split('//')[1]
             x = x.split('?')[0]
-            provider = CONFIG['xbmc-providers']['shows']
+            provider = getenv('XBMC_PROVIDERS_SHOWS', CONFIG['xbmc-providers']['shows'])
         else:
             logging.error("Show [{} ({})]: Unrecognized GUID {}".format(
                 show.title, show.year, guid))
@@ -198,7 +198,7 @@ def process_show_section(s):
                 collected = trakt_collected.get_completed(
                     episode.seasonNumber, episode.index)
                 # sync collected
-                if CONFIG['sync']['collection']:
+                if getenv('SYNC_COLLECTION', CONFIG['sync']['collection']):
                     if not collected:
                         try:
                             with requests_cache.disabled():
@@ -210,7 +210,7 @@ def process_show_section(s):
                                 "JSON decode error: {}".format(str(e)))
 
                 # sync watched status
-                if CONFIG['sync']['watched_status']:
+                if getenv('SYNC_WATCHED_STATUS', CONFIG['sync']['watched_status']):
                     if episode.isWatched != watched:
                         if episode.isWatched:
                             try:
@@ -242,14 +242,14 @@ def main():
 
     start_time = time()
     load_dotenv()
-    logLevel = logging.DEBUG if CONFIG['log_debug_messages'] else logging.INFO
+    logLevel = logging.DEBUG if getenv('LOG_DEBUG_MESSAGES', CONFIG['log_debug_messages']) else logging.INFO
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
                         handlers=[logging.FileHandler('last_update.log', 'w', 'utf-8')],
                         level=logLevel)
     listutil = TraktListUtil()
     # do not use the cache for account specific stuff as this is subject to change
     with requests_cache.disabled():
-        if CONFIG['sync']['liked_lists']:
+        if getenv('SYNC_LIKED_LISTS', CONFIG['sync']['liked_lists']):
             liked_lists = pytrakt_extensions.get_liked_lists()
         trakt_user = trakt.users.User(getenv('TRAKT_USERNAME'))
         trakt_watched_movies = set(
@@ -259,13 +259,13 @@ def main():
         trakt_movie_collection = set(
             map(lambda m: m.slug, trakt_user.movie_collection))
         #logging.debug("Movie collection from trakt:", trakt_movie_collection)
-        if CONFIG['sync']['watchlist']:
+        if getenv('SYNC_WATCHLIST', CONFIG['sync']['watchlist']):
             listutil.addList(None, "Trakt Watchlist", list_set=set(
                 map(lambda m: m.slug, trakt_user.watchlist_movies)))
         #logging.debug("Movie watchlist from trakt:", trakt_movie_watchlist)
         user_ratings = trakt_user.get_ratings(media_type='movies')
 
-    if CONFIG['sync']['liked_lists']:
+    if getenv('SYNC_LIKED_LISTS', CONFIG['sync']['liked_lists']):
         for lst in liked_lists:
             listutil.addList(lst['username'], lst['listname'])
     ratings = {}
@@ -278,7 +278,7 @@ def main():
         plex_token = ""
     with requests_cache.disabled():
         plex = plexapi.server.PlexServer(
-            token=plex_token, baseurl=CONFIG['base_url'])
+            token=plex_token, baseurl=getenv('BASE_URL', CONFIG['base_url']))
         logging.info("Server version {} updated at: {}".format(
             plex.version, plex.updatedAt))
         logging.info("Recently added: {}".format(
