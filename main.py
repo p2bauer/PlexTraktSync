@@ -246,12 +246,20 @@ def main():
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
                         handlers=[logging.FileHandler('last_update.log', 'w', 'utf-8')],
                         level=logLevel)
+
+    trakt.APPLICATION_ID = '65370'
+    trakt_client_id = getenv('TRAKT_CLIENT_ID')
+    trakt_client_secret = getenv('TRAKT_CLIENT_SECRET')
+    trakt.core.AUTH_METHOD=trakt.core.OAUTH_AUTH
+    trakt_user = getenv('TRAKT_USERNAME')
+    trakt.init(trakt_user, client_id=trakt_client_id, client_secret=trakt_client_secret)
+
     listutil = TraktListUtil()
     # do not use the cache for account specific stuff as this is subject to change
     with requests_cache.disabled():
         if getenv('SYNC_LIKED_LISTS', CONFIG['sync']['liked_lists']):
             liked_lists = pytrakt_extensions.get_liked_lists()
-        trakt_user = trakt.users.User(getenv('TRAKT_USERNAME'))
+        trakt_user = trakt.users.User(trakt_user)
         trakt_watched_movies = set(
             map(lambda m: m.slug, trakt_user.watched_movies))
         logging.debug("Watched movies from trakt: {}".format(
