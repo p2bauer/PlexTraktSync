@@ -248,11 +248,13 @@ def main():
                         level=logLevel)
 
     trakt.APPLICATION_ID = '65370'
-    trakt_client_id = getenv('TRAKT_CLIENT_ID')
-    trakt_client_secret = getenv('TRAKT_CLIENT_SECRET')
     trakt.core.AUTH_METHOD=trakt.core.OAUTH_AUTH
     trakt_user = getenv('TRAKT_USERNAME')
-    trakt.init(trakt_user, client_id=trakt_client_id, client_secret=trakt_client_secret)
+    
+    # instead of initializing via console, just manually set oauth token from environment vars
+    #   (since docker/etc can't accept console input)
+    # trakt.init(trakt_user, client_id=getenv('TRAKT_CLIENT_ID'), client_secret=getenv('TRAKT_CLIENT_SECRET'))
+    trakt.core.OAUTH_TOKEN = getenv('TRAKT_OAUTH_TOKEN')
 
     listutil = TraktListUtil()
     # do not use the cache for account specific stuff as this is subject to change
