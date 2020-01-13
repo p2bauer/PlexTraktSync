@@ -245,7 +245,7 @@ def main():
                         handlers=[logging.FileHandler('last_update.log', 'w', 'utf-8')],
                         level=logLevel)
 
-    trakt.APPLICATION_ID = '65370'
+    trakt.APPLICATION_ID = getenv('TRAKT_APP_ID', '65370')
     trakt.core.AUTH_METHOD=trakt.core.OAUTH_AUTH
     trakt_user = getenv('TRAKT_USERNAME')
     
