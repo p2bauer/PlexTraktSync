@@ -1,15 +1,17 @@
 
 import plexapi.server
+from os import getenv, path
 import trakt
+trakt.core.CONFIG_PATH = path.join(path.dirname(path.abspath(__file__)), ".pytrakt.json")
 import trakt.movies
 import trakt.tv
 import trakt.sync
 import trakt.users
 import trakt.core
 from dotenv import load_dotenv
-from os import getenv
 import logging
 from time import time
+import datetime
 from json.decoder import JSONDecodeError
 
 
@@ -110,7 +112,8 @@ def process_movie_section(s, watched_set, ratings_dict, listutil, collection):
                         logging.info("Movie [{} ({})]: marking as watched on Trakt...".format(
                             movie.title, movie.year))
                         with requests_cache.disabled():
-                            m.mark_as_seen()
+                            seen_date = (movie.lastViewedAt if movie.lastViewedAt else datetime.now())
+                            m.mark_as_seen(seen_date)
                     # set watched status if movie is watched on trakt
                     elif watchedOnTrakt:
                         logging.info("Movie [{} ({})]: marking as watched in Plex...".format(
@@ -240,6 +243,11 @@ def main():
 
     start_time = time()
     load_dotenv()
+
+    if not getenv("PLEX_TOKEN") or not getenv("TRAKT_USERNAME"):
+        print("First run, please follow those configuration instructions.")
+        import get_env_data
+        load_dotenv()
     logLevel = logging.DEBUG if getenv('LOG_DEBUG_MESSAGES', CONFIG['log_debug_messages']) else logging.INFO
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
                         handlers=[logging.FileHandler('last_update.log', 'w', 'utf-8')],
